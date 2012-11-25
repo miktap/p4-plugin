@@ -1,0 +1,28 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  <f:entry title="Depot" help="/plugin/perforce/help/depot.html">
+    <table width="100%">
+      <f:entry title="P4PORT">
+        <f:textbox field="p4Port" id="p4Port"/>
+      </f:entry>
+      <f:entry title="P4USER">
+        <f:textbox field="p4User" id="p4User"/>
+      </f:entry>
+      <f:entry title="P4PASSWD">
+        <f:password field="p4Passwd" id="p4Passwd"/>
+      </f:entry>
+    </table>
+  </f:entry>
+
+  <f:entry title="Project Details">
+    <table width="100%">
+      <f:entry title="P4CLIENT" help="/plugin/perforce/help/p4Client.html">
+        <f:textbox field="p4Client" id="p4Client"/>
+      </f:entry>
+      <f:entry title="Stream" help="/plugin/perforce/help/p4Stream.html">
+        <f:textbox name="p4Stream" field="p4Stream"/>
+      </f:entry>
+    </table>
+  </f:entry>
+
+</j:jelly>

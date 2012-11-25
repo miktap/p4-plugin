@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.nokia.jenkins</groupId>
+        <artifactId>njen-nwwp-plugins</artifactId>
+        <version>1.454-3.6</version>
+    </parent>
+
+    <groupId>com.nokia.jenkins</groupId>
+    <artifactId>p4-plugin</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>hpi</packaging>
+    <name>Build page information setter plugin</name>
+    <url>https://source.nokia.com/projects/965-njen-nwwp/wiki/pages/NJen_build_page_info_plugin</url>
+
+    <scm>
+        <connection>scm:hg:https://source.nokia.com/njen-nwwp/hg/build-page-info</connection>
+        <developerConnection>scm:hg:https://source.nokia.com/njen-nwwp/hg/build-page-info</developerConnection>
+    </scm>
+
+    <properties>
+        <!-- removed warning about the character set that makes the build platform dependent -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <!-- NJen NwWP Maven repository -->
+            <id>NJen-NwWP</id>
+            <url>http://njen-nwwp.europe.nokia.com/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+        <repository>
+            <!-- NJen NwWP Maven snapshot repository -->
+            <id>NJen-NwWP-snapshot</id>
+            <url>http://njen-nwwp.europe.nokia.com/maven-snapshot/</url>
+        </repository>
+    </repositories>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.perforce</groupId>
+            <artifactId>p4java</artifactId>
+            <version>[2011.1.297684,)</version>
+        </dependency>
+    </dependencies>
+</project>
