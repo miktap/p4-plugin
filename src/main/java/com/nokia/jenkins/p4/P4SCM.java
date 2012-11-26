@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 import net.sf.json.JSONObject;
@@ -11,10 +14,12 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.impl.generic.client.ClientOptions;
 import com.perforce.p4java.impl.mapbased.client.ClientSummary;
+import com.perforce.p4java.impl.generic.client.ClientSubmitOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 
@@ -23,6 +28,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Computer;
 import hudson.model.BuildListener;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
@@ -173,9 +179,20 @@ public class P4SCM extends SCM {
             server.setUserName(p4User);
             server.login(p4Passwd);
             
-            ClientSummary client = new ClientSummary();
-            client.setName(p4Client);
-            client.setRoot(workspace.getRemote());
+            List altroots = new ArrayList();
+            
+            ClientSummary client = new ClientSummary(p4Client,
+                    new Date(),
+                    new Date(),
+                    "Created by Jenkins",
+                    Computer.currentComputer().getHostName(),
+                    p4User,
+                    workspace.getRemote(),
+                    IClientSummary.ClientLineEnd.LOCAL,
+                    new ClientOptions(true, true, false, false, false, true),
+                    new ClientSubmitOptions(),
+                    altroots,
+                    p4Stream);
         } catch (RequestException rexc) {
             log.println(rexc.getDisplayString());
             rexc.printStackTrace();

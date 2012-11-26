@@ -1,0 +1,26 @@
+-classpath
+'/ecloud/workspaces/r12.3/p4java.archive.2012.3.1521981/src/r12.3/p4-java/com.perforce.p4java/target/classes'
+-encoding
+'UTF-8'
+-overview
+'/ecloud/workspaces/r12.3/p4java.archive.2012.3.1521981/src/r12.3/p4-java/com.perforce.p4java/src/main/javadoc/overview.html'
+-protected
+-sourcepath
+'/ecloud/workspaces/r12.3/p4java.archive.2012.3.1521981/src/r12.3/p4-java/com.perforce.p4java/src/main/java:/ecloud/workspaces/r12.3/p4java.archive.2012.3.1521981/src/r12.3/p4-java/com.perforce.p4java/src/main/javadoc'
+-author
+-bottom
+'Copyright &#169; 2012 <a href="http://www.perforce.com">Perforce Software</a>. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'/ecloud/workspaces/r12.3/p4java.archive.2012.3.1521981/src/r12.3/p4-java/com.perforce.p4java/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'Perforce Java API 2012.3.551082 API'
+-link
+'http://java.sun.com/j2se/1.5.0/docs/api'
+-use
+-version
+-windowtitle
+'Perforce Java API 2012.3.551082 API'
