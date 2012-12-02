@@ -1,28 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.nokia.jenkins</groupId>
-        <artifactId>njen-nwwp-plugins</artifactId>
-        <version>1.454-3.6</version>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>plugin</artifactId>
+        <version>1.455</version>
     </parent>
 
     <groupId>com.nokia.jenkins</groupId>
     <artifactId>p4-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <name>Build page information setter plugin</name>
-    <url>https://source.nokia.com/projects/965-njen-nwwp/wiki/pages/NJen_build_page_info_plugin</url>
-
-    <scm>
-        <connection>scm:hg:https://source.nokia.com/njen-nwwp/hg/build-page-info</connection>
-        <developerConnection>scm:hg:https://source.nokia.com/njen-nwwp/hg/build-page-info</developerConnection>
-    </scm>
+    <name>Perforce plugin</name>
 
     <properties>
         <!-- removed warning about the character set that makes the build platform dependent -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- repositories for dependencies -->
     <repositories>
         <repository>
             <!-- NJen NwWP Maven repository -->
@@ -33,12 +28,24 @@
             </releases>
         </repository>
         <repository>
+            <!-- Jenkins development -->
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </repository>
+        <repository>
             <!-- NJen NwWP Maven snapshot repository -->
             <id>NJen-NwWP-snapshot</id>
             <url>http://njen-nwwp.europe.nokia.com/maven-snapshot/</url>
         </repository>
     </repositories>
-    
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <dependency>
             <groupId>com.perforce</groupId>
@@ -48,4 +55,21 @@
             <systemPath>${project.basedir}/lib/p4java-2012.3.551082.jar</systemPath>
         </dependency>
     </dependencies>
+    
+    <!-- artifact distribution management -->
+    <distributionManagement>
+        <repository>
+            <!-- NJen NwWP Maven repository. -->
+            <id>NJen-NwWP</id>
+            <name>NJen NwWP repository.</name>
+            <url>scp://njen-nwwp.europe.nokia.com:/nokia/sa_nmp/groups/njen_nwwp/www/maven/</url>
+        </repository>
+        <snapshotRepository>
+            <!-- NJen NwWP Maven snapshot repository. -->
+            <id>NJen-NwWP-snapshot</id>
+            <name>NJen NwWP development repository.</name>
+            <url>scp://njen-nwwp.europe.nokia.com:/nokia/sa_nmp/groups/njen_nwwp/www/maven-snapshot/</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

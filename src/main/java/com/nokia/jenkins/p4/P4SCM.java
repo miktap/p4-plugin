@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
@@ -14,13 +13,20 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.client.ClientOptions;
-import com.perforce.p4java.impl.mapbased.client.ClientSummary;
-import com.perforce.p4java.impl.generic.client.ClientSubmitOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.option.client.SyncOptions;
+import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.server.ServerFactory;
 
 import hudson.Extension;
@@ -172,36 +178,88 @@ public class P4SCM extends SCM {
         
         PrintStream log = listener.getLogger();
         String serverUriString = "p4java://" + p4Port;
-        
+
+        if (p4Port==null || p4Port.equals("")) {
+            log.println("*** ERROR: P4PORT missing!");
+            return false;
+        }
+        if (p4User==null || p4User.equals("")) {
+            log.println("*** ERROR: P4USER missing!");
+            return false;
+        }
+        if (p4Client==null || p4Client.equals("")) {
+            log.println("*** ERROR: P4CLIENT missing!");
+            return false;
+        }
+        if (p4Stream==null || p4Stream.equals("")) {
+            log.println("*** ERROR: Stream missing!");
+            return false;
+        }
+
         try {
-            IOptionsServer server = ServerFactory.getOptionsServer(serverUriString, null);
+            LOGGER.finest("Connecting to server: '" + serverUriString + "'.");
+            IServer server = ServerFactory.getServer(serverUriString, null);
             server.connect();
+            
+            LOGGER.finest("Login as user '" + p4User + "'.");
             server.setUserName(p4User);
             server.login(p4Passwd);
             
-            List altroots = new ArrayList();
+            IClient currentClient = getClient(server, workspace);
+            server.setCurrentClient(currentClient);
+
+            IServerInfo info = server.getServerInfo();
+            if (info != null) {
+                LOGGER.finest("Info from Perforce server at URI '"
+                                    + serverUriString + "':\n" 
+                                    + formatInfo(info));
+            }
             
-            ClientSummary client = new ClientSummary(p4Client,
-                    new Date(),
-                    new Date(),
-                    "Created by Jenkins",
-                    Computer.currentComputer().getHostName(),
-                    p4User,
-                    workspace.getRemote(),
-                    IClientSummary.ClientLineEnd.LOCAL,
-                    new ClientOptions(true, true, false, false, false, true),
-                    new ClientSubmitOptions(),
-                    altroots,
-                    p4Stream);
+            log.println("Using P4PORT: '" + p4Port + "'.");
+            log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision :'");
+            List<IFileSpec> syncList = currentClient.sync(
+                    FileSpecBuilder.makeFileSpecList("//..."),
+                    new SyncOptions());
+
+            for (IFileSpec fileSpec : syncList) {
+                if (fileSpec != null) {
+                    if (fileSpec.getOpStatus() == FileSpecOpStatus.VALID) {
+                        LOGGER.finest("Sync'd: "
+                                            + fileSpec.getDepotPath()
+                                            + "#" + fileSpec.getEndRevision()
+                                            + " " + fileSpec.getClientPath()
+                                            + " " + fileSpec.getLocalPath());
+                    } else {
+                        LOGGER.finest(fileSpec.getStatusMessage());
+                    }
+                }
+                
+
+            }
+            
+            if (server != null) {
+                server.disconnect();
+            }
+        } catch (ConnectionException cexc) {
+            log.println(cexc.getLocalizedMessage());
+            LOGGER.finest("*** ERROR: " + cexc.getMessage());
+            cexc.printStackTrace();
+            return false;
         } catch (RequestException rexc) {
             log.println(rexc.getDisplayString());
+            LOGGER.finest("*** ERROR: " + rexc.getMessage());
             rexc.printStackTrace();
+            return false;
         } catch (P4JavaException exc) {
             log.println(exc.getLocalizedMessage());
+            LOGGER.finest("*** ERROR: " + exc.getMessage());
             exc.printStackTrace();
+            return false;
         } catch (URISyntaxException e) {
             log.println(e.getLocalizedMessage());
+            LOGGER.finest("*** ERROR: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
         return true;
     }
@@ -212,6 +270,102 @@ public class P4SCM extends SCM {
         return null;
     }
 
+    /**
+     * Get the existing p4 client or create a new one.
+     * 
+     * @param server Perforce server
+     * @param workspace Jenkins workspace
+     * @return Current p4 client for the build
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws AccessException
+     * @throws RequestException
+     * @throws ConnectionException
+     */
+    private IClient getClient(IServer server, FilePath workspace) 
+            throws IOException, InterruptedException, AccessException, 
+            RequestException, ConnectionException {
+        
+        IClient client;
+        // Use unique client for each node and eliminate spaces.
+        String p4ClientEffective = p4Client.replaceAll(" ", "_");
+        if (Computer.currentComputer() != null) {
+            if (Computer.currentComputer().getName() != null && !Computer.currentComputer().getName().equals("")) {
+                p4ClientEffective = p4Client.replaceAll(" ", "_") + "_" + Computer.currentComputer().getName();
+            }
+        }
+        
+        List<IClientSummary> clientList = server.getClients(p4User, p4ClientEffective, 0);
+        
+        if (clientList != null) {
+            for (IClientSummary clientSummary : clientList) {
+                if (clientSummary.getName().equals(p4ClientEffective)) {
+                    LOGGER.finest("Found existing p4 client '" + p4ClientEffective + "'.");
+                    client = server.getClient(clientSummary);
+                    return client;
+                }
+            }
+        }
+        
+        LOGGER.finest("Creating new p4 client '" + p4ClientEffective + "'.");
+        client = new Client();
+        client.setName(p4ClientEffective);
+        client.setAccessed(new Date());
+        client.setUpdated(new Date());
+        client.setDescription("Created by Jenkins");
+        client.setHostName(getEffectiveHostName());
+        client.setOwnerName(p4User);
+        client.setRoot(workspace.getRemote());
+        client.setLineEnd(IClientSummary.ClientLineEnd.LOCAL);
+        client.setOptions(new ClientOptions(true,true,false,false,false,true));
+        client.setServer(server);
+        client.setStream(p4Stream);
+
+        server.createClient(client);
+        
+        return client;
+    }
+    
+    /**
+     * Get the effective host name.
+     * 
+     * @return Host name without the domain name or UNKNOWNHOST if Jenkins is
+     *          unable to retrieve the host name.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private String getEffectiveHostName()
+            throws IOException, InterruptedException {
+
+        String host = Computer.currentComputer().getHostName();
+        
+        if (host == null) {
+            LOGGER.finest("Could not get host name for slave " + Computer.currentComputer().getDisplayName());
+            host = "UNKNOWNHOST";
+        }
+
+        if (host.contains(".")) {
+            host = String.valueOf(host.subSequence(0, host.indexOf('.')));
+        }
+        LOGGER.finest("Using host '" + host + "'.");
+        return host;
+    }
+    
+    /**
+     * Create formatted p4 server information.
+     * 
+     * @param info Perforce server information
+     * @return Formatted server information
+     */
+    private static String formatInfo(IServerInfo info) {
+        return "\tserver address: " + info.getServerAddress() + "\n"
+                + "\tserver version" + info.getServerVersion() + "\n"
+                + "\tclient address: " + info.getClientAddress() + "\n"
+                + "\tclient working directory: " + info.getClientCurrentDirectory() + "\n"
+                + "\tclient name: " + info.getClientName() + "\n"
+                + "\tuser name: " + info.getUserName();
+    }
+    
     @Extension
     public static final class P4SCMDescriptor extends SCMDescriptor<P4SCM> {
         public P4SCMDescriptor() {
