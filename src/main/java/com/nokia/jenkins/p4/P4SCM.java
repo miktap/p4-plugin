@@ -216,7 +216,7 @@ public class P4SCM extends SCM {
             }
             
             log.println("Using P4PORT: '" + p4Port + "'.");
-            log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision :'");
+            log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision: '");
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
                     new SyncOptions());
@@ -302,6 +302,7 @@ public class P4SCM extends SCM {
                 if (clientSummary.getName().equals(p4ClientEffective)) {
                     LOGGER.finest("Found existing p4 client '" + p4ClientEffective + "'.");
                     client = server.getClient(clientSummary);
+                    safeClientIfDirty(client, workspace);
                     return client;
                 }
             }
@@ -349,6 +350,23 @@ public class P4SCM extends SCM {
         }
         LOGGER.finest("Using host '" + host + "'.");
         return host;
+    }
+    
+    /**
+     * Do modifications to the client if needed.
+     * 
+     * @param client The client to be modified.
+     */
+    private void safeClientIfDirty(IClient client, FilePath workspace) {
+        if (!p4Stream.equals(client.getStream())) {
+            client.setStream(p4Stream);
+        }
+        if (!p4User.equals(client.getOwnerName())) {
+            client.setOwnerName(p4User);
+        }
+        if (!workspace.getRemote().equals(client.getRoot())) {
+            client.setRoot(workspace.getRemote());
+        }
     }
     
     /**

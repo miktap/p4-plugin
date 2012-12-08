@@ -47,12 +47,19 @@
     </pluginRepositories>
 
     <dependencies>
+        <!-- P4Java API -->
         <dependency>
             <groupId>com.perforce</groupId>
             <artifactId>p4java</artifactId>
             <version>2012.3.551082</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/p4java-2012.3.551082.jar</systemPath>
+        </dependency>
+        <!-- StaX utilities, for indenting xml -->
+        <dependency>
+            <groupId>net.java.dev.stax-utils</groupId>
+            <artifactId>stax-utils</artifactId>
+            <version>[20070216,)</version>
         </dependency>
     </dependencies>
     
