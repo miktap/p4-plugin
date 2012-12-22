@@ -37,6 +37,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Computer;
 import hudson.model.BuildListener;
 import hudson.model.Hudson;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
@@ -179,19 +180,19 @@ public class P4SCM extends SCM {
         PrintStream log = listener.getLogger();
         String serverUriString = "p4java://" + p4Port;
 
-        if (p4Port==null || p4Port.equals("")) {
+        if (p4Port==null || p4Port.trim().isEmpty()) {
             log.println("*** ERROR: P4PORT missing!");
             return false;
         }
-        if (p4User==null || p4User.equals("")) {
+        if (p4User==null || p4User.trim().isEmpty()) {
             log.println("*** ERROR: P4USER missing!");
             return false;
         }
-        if (p4Client==null || p4Client.equals("")) {
+        if (p4Client==null || p4Client.trim().isEmpty()) {
             log.println("*** ERROR: P4CLIENT missing!");
             return false;
         }
-        if (p4Stream==null || p4Stream.equals("")) {
+        if (p4Stream==null || p4Stream.trim().isEmpty()) {
             log.println("*** ERROR: Stream missing!");
             return false;
         }
@@ -215,7 +216,11 @@ public class P4SCM extends SCM {
                                     + formatInfo(info));
             }
             
+            //int lastChange = getLastChange((Run)build.getPreviousBuild());
+            
             log.println("Using P4PORT: '" + p4Port + "'.");
+            log.println("Logged in as user: '" + p4User + "'.");
+            //log.println("Last built changelist: '" + lastChange + "'.");
             log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision: '");
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
@@ -233,9 +238,9 @@ public class P4SCM extends SCM {
                         LOGGER.finest(fileSpec.getStatusMessage());
                     }
                 }
-                
-
             }
+            
+            //build.addAction(new P4SCMRevisionState(1));
             
             if (server != null) {
                 server.disconnect();
@@ -353,7 +358,7 @@ public class P4SCM extends SCM {
     }
     
     /**
-     * Do modifications to the client if needed.
+     * Save the client specification if there are modifications to it.
      * 
      * @param client The client to be modified.
      */
@@ -382,6 +387,45 @@ public class P4SCM extends SCM {
                 + "\tclient working directory: " + info.getClientCurrentDirectory() + "\n"
                 + "\tclient name: " + info.getClientName() + "\n"
                 + "\tuser name: " + info.getUserName();
+    }
+    
+    /**
+     * Get the last built changelist ID.
+     * 
+     * @param build The build from where to start searching. Go back
+     *      one by one until changelist is found.
+     * @return Last build changelist ID or 0 if none found.
+     */
+    private static int getLastChange(Run build) {
+        
+        LOGGER.finest("Searching the latest built changelist ID...");
+        P4SCMRevisionState revision = getMostRecentRevision(build);
+        if (revision == null) {
+            LOGGER.finest("Could not find previously built changelist.");
+            return 0;
+        }
+
+        LOGGER.finest("Found changelist: '" + revision.getRevision() + "'.");
+        return revision.getRevision();
+    }
+    
+    /**
+     * Get the most recent {@link P4SCMRevisionState}.
+     * 
+     * @param build The build from where to start searching. Go back
+     *      one by one until {@link P4SCMRevisionState} is found.
+     * @return
+     */
+    private static P4SCMRevisionState getMostRecentRevision(Run build) {
+        if (build == null)
+            return null;
+
+        P4SCMRevisionState revision = build.getAction(P4SCMRevisionState.class);
+        if (revision != null)
+            return revision;
+
+        // If build had no actions, keep going back until we find one that does.
+        return getMostRecentRevision(build.getPreviousBuild());
     }
     
     @Extension

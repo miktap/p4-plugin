@@ -32,11 +32,6 @@
             <id>repo.jenkins-ci.org</id>
             <url>http://repo.jenkins-ci.org/public/</url>
         </repository>
-        <repository>
-            <!-- NJen NwWP Maven snapshot repository -->
-            <id>NJen-NwWP-snapshot</id>
-            <url>http://njen-nwwp.europe.nokia.com/maven-snapshot/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -59,7 +54,9 @@
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>
             <artifactId>stax-utils</artifactId>
-            <version>[20070216,)</version>
+            <version>20070216</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/stax-utils-20070216.jar</systemPath>
         </dependency>
     </dependencies>
     
