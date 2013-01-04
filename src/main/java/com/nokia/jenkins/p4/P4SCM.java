@@ -180,20 +180,7 @@ public class P4SCM extends SCM {
         PrintStream log = listener.getLogger();
         String serverUriString = "p4java://" + p4Port;
 
-        if (p4Port==null || p4Port.trim().isEmpty()) {
-            log.println("*** ERROR: P4PORT missing!");
-            return false;
-        }
-        if (p4User==null || p4User.trim().isEmpty()) {
-            log.println("*** ERROR: P4USER missing!");
-            return false;
-        }
-        if (p4Client==null || p4Client.trim().isEmpty()) {
-            log.println("*** ERROR: P4CLIENT missing!");
-            return false;
-        }
-        if (p4Stream==null || p4Stream.trim().isEmpty()) {
-            log.println("*** ERROR: Stream missing!");
+        if (!isConfigurationValid(log)) {
             return false;
         }
 
@@ -220,7 +207,7 @@ public class P4SCM extends SCM {
             
             log.println("Using P4PORT: '" + p4Port + "'.");
             log.println("Logged in as user: '" + p4User + "'.");
-            //log.println("Last built changelist: '" + lastChange + "'.");
+            log.println("Last built changelist: '" + getLastChange(build) + "'.");
             log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision: '");
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
@@ -240,7 +227,7 @@ public class P4SCM extends SCM {
                 }
             }
             
-            //build.addAction(new P4SCMRevisionState(1));
+            build.addAction(new P4SCMRevisionState(1));
             
             if (server != null) {
                 server.disconnect();
@@ -276,6 +263,34 @@ public class P4SCM extends SCM {
     }
 
     /**
+     * Check the validity of configuration options.
+     * 
+     * @param log Log handle for error reports
+     * @return true if everything is ok, false otherwise
+     */
+    private boolean isConfigurationValid(PrintStream log) {
+        
+        if (p4Port==null || p4Port.trim().isEmpty()) {
+            log.println("*** ERROR: P4PORT missing!");
+            return false;
+        }
+        if (p4User==null || p4User.trim().isEmpty()) {
+            log.println("*** ERROR: P4USER missing!");
+            return false;
+        }
+        if (p4Client==null || p4Client.trim().isEmpty()) {
+            log.println("*** ERROR: P4CLIENT missing!");
+            return false;
+        }
+        if (p4Stream==null || p4Stream.trim().isEmpty()) {
+            log.println("*** ERROR: Stream missing!");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
      * Get the existing p4 client or create a new one.
      * 
      * @param server Perforce server
@@ -295,8 +310,8 @@ public class P4SCM extends SCM {
         // Use unique client for each node and eliminate spaces.
         String p4ClientEffective = p4Client.replaceAll(" ", "_");
         if (Computer.currentComputer() != null) {
-            if (Computer.currentComputer().getName() != null && !Computer.currentComputer().getName().equals("")) {
-                p4ClientEffective = p4Client.replaceAll(" ", "_") + "_" + Computer.currentComputer().getName();
+            if (Computer.currentComputer().getName() != null && !Computer.currentComputer().getName().trim().isEmpty()) {
+                p4ClientEffective += "_" + Computer.currentComputer().getName();
             }
         }
         
@@ -306,6 +321,7 @@ public class P4SCM extends SCM {
             for (IClientSummary clientSummary : clientList) {
                 if (clientSummary.getName().equals(p4ClientEffective)) {
                     LOGGER.finest("Found existing p4 client '" + p4ClientEffective + "'.");
+                    // Save possible changes to the client.
                     client = server.getClient(clientSummary);
                     safeClientIfDirty(client, workspace);
                     return client;
@@ -398,7 +414,7 @@ public class P4SCM extends SCM {
      */
     private static int getLastChange(Run build) {
         
-        LOGGER.finest("Searching the latest built changelist ID...");
+        LOGGER.finest("Searching the last built changelist ID...");
         P4SCMRevisionState revision = getMostRecentRevision(build);
         if (revision == null) {
             LOGGER.finest("Could not find previously built changelist.");
