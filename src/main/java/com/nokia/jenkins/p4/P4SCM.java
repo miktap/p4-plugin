@@ -15,6 +15,8 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -23,6 +25,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.client.ClientOptions;
+import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IServer;
@@ -203,12 +206,15 @@ public class P4SCM extends SCM {
                                     + formatInfo(info));
             }
             
-            //int lastChange = getLastChange((Run)build.getPreviousBuild());
+            IChangelistSummary lastChange = getLastChange((Run)build.getPreviousBuild());
+            List<IChangelistSummary> allChanges = server.getChangelists(0, null, null, null, false, IChangelist.Type.SUBMITTED, false);
+            IChangelistSummary newestChange = allChanges.get(0);
             
-            log.println("Using P4PORT: '" + p4Port + "'.");
-            log.println("Logged in as user: '" + p4User + "'.");
-            log.println("Last built changelist: '" + getLastChange(build) + "'.");
-            log.println("Syncing P4CLIENT: '" + currentClient.getName() + "' to revision: '");
+            log.println("Using P4PORT: \t\t'" + p4Port + "'.");
+            log.println("Logged in as user: \t'" + p4User + "'.");
+            log.println("Using P4CLIENT: \t'" + currentClient.getName());
+            log.println("Last built changelist: \t'" + lastChange.getId() + "'.");
+            log.println("Syncing to revision: \t'" + newestChange.getId() + "'.");
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
                     new SyncOptions());
@@ -227,7 +233,7 @@ public class P4SCM extends SCM {
                 }
             }
             
-            build.addAction(new P4SCMRevisionState(1));
+            build.addAction(new P4SCMRevisionState(newestChange));
             
             if (server != null) {
                 server.disconnect();
@@ -410,15 +416,16 @@ public class P4SCM extends SCM {
      * 
      * @param build The build from where to start searching. Go back
      *      one by one until changelist is found.
-     * @return Last build changelist ID or 0 if none found.
+     * @return Last built changelist as {@link IChangelistSummary}. If none found,
+     *      return an object with id {@link IChangelist.UNKNOWN}.
      */
-    private static int getLastChange(Run build) {
+    private static IChangelistSummary getLastChange(Run build) {
         
         LOGGER.finest("Searching the last built changelist ID...");
         P4SCMRevisionState revision = getMostRecentRevision(build);
         if (revision == null) {
             LOGGER.finest("Could not find previously built changelist.");
-            return 0;
+            return new ChangelistSummary();
         }
 
         LOGGER.finest("Found changelist: '" + revision.getRevision() + "'.");

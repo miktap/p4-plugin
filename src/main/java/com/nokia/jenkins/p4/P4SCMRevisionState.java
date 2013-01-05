@@ -1,12 +1,22 @@
 package com.nokia.jenkins.p4;
 
+import com.perforce.p4java.core.IChangelistSummary;
 import hudson.scm.SCMRevisionState;
 
+/**
+ * This object stores Perforce workspace state as a {@link IChangelistSummary}.
+ * 
+ * When attached to a build, one can use it for polling operations and 
+ * changelist calculations.
+ * 
+ * @author mitapani
+ *
+ */
 public class P4SCMRevisionState extends SCMRevisionState {
     
-    private final int revision;
+    private final IChangelistSummary revision;
     
-    public P4SCMRevisionState(int revision){
+    public P4SCMRevisionState(IChangelistSummary revision){
         this.revision = revision;
     }
     
@@ -20,14 +30,14 @@ public class P4SCMRevisionState extends SCMRevisionState {
         }
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 23 * hash + this.revision;
-        return hash;
-    }
+//    @Override
+//    public int hashCode() {
+//        int hash = 7;
+//        hash = 23 * hash + this.revision;
+//        return hash;
+//    }
 
-    public int getRevision() {
+    public IChangelistSummary getRevision() {
         return revision;
     }
 
