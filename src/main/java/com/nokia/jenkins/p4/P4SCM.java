@@ -13,6 +13,8 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
@@ -207,14 +209,15 @@ public class P4SCM extends SCM {
             }
             
             IChangelistSummary lastChange = getLastChange((Run)build.getPreviousBuild());
-            List<IChangelistSummary> allChanges = server.getChangelists(0, null, null, null, false, IChangelist.Type.SUBMITTED, false);
-            IChangelistSummary newestChange = allChanges.get(0);
+            IChangelistSummary newestChange = getNewestChange(server);
             
-            log.println("Using P4PORT: \t\t'" + p4Port + "'.");
-            log.println("Logged in as user: \t'" + p4User + "'.");
-            log.println("Using P4CLIENT: \t'" + currentClient.getName());
-            log.println("Last built changelist: \t'" + lastChange.getId() + "'.");
-            log.println("Syncing to revision: \t'" + newestChange.getId() + "'.");
+            String lastBuiltChange = lastChange.getId()==IChangelist.UNKNOWN ? "no previous builds" : Integer.toString(lastChange.getId());
+            log.println(StringUtils.rightPad("Using P4PORT:", 30, ".") + p4Port);
+            log.println(StringUtils.rightPad("Logged in as user:", 30, ".")+ p4User);
+            log.println(StringUtils.rightPad("Using P4CLIENT:", 30, ".") + currentClient.getName());
+            log.println(StringUtils.rightPad("Last built changelist:", 30, ".") + lastBuiltChange);
+            log.println(StringUtils.rightPad("Syncing to changelist:", 30, ".") + newestChange.getId());
+            
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
                     new SyncOptions());
@@ -451,6 +454,25 @@ public class P4SCM extends SCM {
         return getMostRecentRevision(build.getPreviousBuild());
     }
     
+    /**
+     * Get the newest changelist ID.
+     * 
+     * @param server Current perforce server object.
+     * @return Newest changelist ID as {@link IChangelistSummary}.
+     * @throws AccessException 
+     * @throws RequestException 
+     * @throws ConnectionException 
+     */
+    private static IChangelistSummary getNewestChange(IServer server) 
+            throws ConnectionException, RequestException, AccessException {
+        
+        //FileSpecBuilder.makeFileSpecList("//...")
+        List<IChangelistSummary> allChanges = server.getChangelists(0, null, null, null, false, IChangelist.Type.SUBMITTED, false);
+        IChangelistSummary newestChange = allChanges.get(0);
+        
+        return newestChange;
+    }
+   
     @Extension
     public static final class P4SCMDescriptor extends SCMDescriptor<P4SCM> {
         public P4SCMDescriptor() {
