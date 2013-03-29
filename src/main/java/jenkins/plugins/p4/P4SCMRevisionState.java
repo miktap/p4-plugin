@@ -1,4 +1,4 @@
-package com.nokia.jenkins.p4;
+package jenkins.plugins.p4;
 
 import com.perforce.p4java.core.IChangelistSummary;
 import hudson.scm.SCMRevisionState;

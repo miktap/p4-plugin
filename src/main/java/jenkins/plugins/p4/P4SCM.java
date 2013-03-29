@@ -1,4 +1,4 @@
-package com.nokia.jenkins.p4;
+package jenkins.plugins.p4;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,6 +63,8 @@ public class P4SCM extends SCM {
     private String p4Stream;
     
     private static final Logger LOGGER = Logger.getLogger(P4SCM.class.getName());
+    
+    private static final int RIGHTPAD_SIZE = 30;
     
     @DataBoundConstructor
     public P4SCM(
@@ -212,11 +214,11 @@ public class P4SCM extends SCM {
             IChangelistSummary newestChange = getNewestChange(server);
             
             String lastBuiltChange = lastChange.getId()==IChangelist.UNKNOWN ? "no previous builds" : Integer.toString(lastChange.getId());
-            log.println(StringUtils.rightPad("Using P4PORT:", 30, ".") + p4Port);
-            log.println(StringUtils.rightPad("Logged in as user:", 30, ".")+ p4User);
-            log.println(StringUtils.rightPad("Using P4CLIENT:", 30, ".") + currentClient.getName());
-            log.println(StringUtils.rightPad("Last built changelist:", 30, ".") + lastBuiltChange);
-            log.println(StringUtils.rightPad("Syncing to changelist:", 30, ".") + newestChange.getId());
+            log.println(StringUtils.rightPad("Using P4PORT:", RIGHTPAD_SIZE, ".") + p4Port);
+            log.println(StringUtils.rightPad("Logged in as user:", RIGHTPAD_SIZE, ".")+ p4User);
+            log.println(StringUtils.rightPad("Using P4CLIENT:", RIGHTPAD_SIZE, ".") + currentClient.getName());
+            log.println(StringUtils.rightPad("Last built changelist:", RIGHTPAD_SIZE, ".") + lastBuiltChange);
+            log.println(StringUtils.rightPad("Syncing to changelist:", RIGHTPAD_SIZE, ".") + newestChange.getId());
             
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),

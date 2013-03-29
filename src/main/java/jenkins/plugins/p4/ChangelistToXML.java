@@ -1,4 +1,4 @@
-package com.nokia.jenkins.p4;
+package jenkins.plugins.p4;
 
 import java.io.FileOutputStream;
 import java.text.DateFormat;
