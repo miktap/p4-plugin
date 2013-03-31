@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.508</version>
+        <version>1.492</version>
     </parent>
 
     <artifactId>p4-plugin</artifactId>
@@ -30,6 +30,11 @@
             <id>repo.jenkins-ci.org</id>
             <url>http://repo.jenkins-ci.org/public/</url>
         </repository>
+        <!-- For stax-utils-20070216.jar ==> jsr173-ri-1.0.jar -->
+        <repository>
+            <id>mmbase</id>
+            <url>http://www.mmbase.org/maven2</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -45,16 +50,12 @@
             <groupId>com.perforce</groupId>
             <artifactId>p4java</artifactId>
             <version>2012.3.551082</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/p4java-2012.3.551082.jar</systemPath>
         </dependency>
         <!-- StaX utilities, for indenting xml -->
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>
             <artifactId>stax-utils</artifactId>
             <version>20070216</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/stax-utils-20070216.jar</systemPath>
         </dependency>
     </dependencies>
 

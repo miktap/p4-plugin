@@ -50,6 +50,13 @@ import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.SCMRevisionState;
 
+/**
+ * Perforce SCM support for Jenkins. Perforce operations are done through
+ * P4Java API, http://www.perforce.com/perforce/doc.current/manuals/p4java/index.html
+ * 
+ * @author mitapani
+ *
+ */
 public class P4SCM extends SCM {
 
     private String p4Port;
@@ -203,20 +210,13 @@ public class P4SCM extends SCM {
             IClient currentClient = getClient(server, workspace);
             server.setCurrentClient(currentClient);
 
-            IServerInfo info = server.getServerInfo();
-            if (info != null) {
-                LOGGER.finest("Info from Perforce server at URI '"
-                                    + serverUriString + "':\n" 
-                                    + formatInfo(info));
-            }
-            
             IChangelistSummary lastChange = getLastChange((Run)build.getPreviousBuild());
             IChangelistSummary newestChange = getNewestChange(server);
             
             String lastBuiltChange = lastChange.getId()==IChangelist.UNKNOWN ? "no previous builds" : Integer.toString(lastChange.getId());
-            log.println(StringUtils.rightPad("Using P4PORT:", RIGHTPAD_SIZE, ".") + p4Port);
-            log.println(StringUtils.rightPad("Logged in as user:", RIGHTPAD_SIZE, ".")+ p4User);
-            log.println(StringUtils.rightPad("Using P4CLIENT:", RIGHTPAD_SIZE, ".") + currentClient.getName());
+            log.println(StringUtils.rightPad("P4PORT:", RIGHTPAD_SIZE, ".") + p4Port);
+            log.println(StringUtils.rightPad("P4USER:", RIGHTPAD_SIZE, ".")+ p4User);
+            log.println(StringUtils.rightPad("P4CLIENT:", RIGHTPAD_SIZE, ".") + currentClient.getName());
             log.println(StringUtils.rightPad("Last built changelist:", RIGHTPAD_SIZE, ".") + lastBuiltChange);
             log.println(StringUtils.rightPad("Syncing to changelist:", RIGHTPAD_SIZE, ".") + newestChange.getId());
             
@@ -224,20 +224,6 @@ public class P4SCM extends SCM {
                     FileSpecBuilder.makeFileSpecList("//..."),
                     new SyncOptions());
 
-            for (IFileSpec fileSpec : syncList) {
-                if (fileSpec != null) {
-                    if (fileSpec.getOpStatus() == FileSpecOpStatus.VALID) {
-                        LOGGER.finest("Sync'd: "
-                                            + fileSpec.getDepotPath()
-                                            + "#" + fileSpec.getEndRevision()
-                                            + " " + fileSpec.getClientPath()
-                                            + " " + fileSpec.getLocalPath());
-                    } else {
-                        LOGGER.finest(fileSpec.getStatusMessage());
-                    }
-                }
-            }
-            
             build.addAction(new P4SCMRevisionState(newestChange));
             
             if (server != null) {
@@ -345,7 +331,7 @@ public class P4SCM extends SCM {
         client.setName(p4ClientEffective);
         client.setAccessed(new Date());
         client.setUpdated(new Date());
-        client.setDescription("Created by Jenkins");
+        client.setDescription("Created by Jenkins P4 plugin");
         client.setHostName(getEffectiveHostName());
         client.setOwnerName(p4User);
         client.setRoot(workspace.getRemote());
@@ -433,7 +419,7 @@ public class P4SCM extends SCM {
             return new ChangelistSummary();
         }
 
-        LOGGER.finest("Found changelist: '" + revision.getRevision() + "'.");
+        LOGGER.finest("Found changelist: '" + revision.getRevision().getId() + "'.");
         return revision.getRevision();
     }
     
