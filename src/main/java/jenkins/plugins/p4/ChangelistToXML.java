@@ -24,7 +24,7 @@ import com.perforce.p4java.core.IChangelistSummary;
 public class ChangelistToXML {
     
     /**
-     * Save a list of changelist elements to XML format.
+     * Save a list of changelist elements into XML format.
      * 
      * @param XMLFile Path to the xml file
      * @param changelists List of {@link IChangelistSummary} elements

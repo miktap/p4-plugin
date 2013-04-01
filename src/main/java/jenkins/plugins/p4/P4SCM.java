@@ -20,7 +20,6 @@ import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -31,7 +30,6 @@ import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.server.ServerFactory;
 
 import hudson.Extension;
@@ -60,18 +58,22 @@ import hudson.scm.SCMRevisionState;
 public class P4SCM extends SCM {
 
     private String p4Port;
-    
     private String p4User;
-    
     private String p4Passwd;
-    
     private String p4Client;
-    
     private String p4Stream;
     
     private static final Logger LOGGER = Logger.getLogger(P4SCM.class.getName());
     
+    /**
+     * Log formatting helper
+     */
     private static final int RIGHTPAD_SIZE = 30;
+    
+    /**
+     * The maximum number of changelists to look back in history.
+     */
+    private static final int MAX_CHANGELISTS = 100;
     
     @DataBoundConstructor
     public P4SCM(
@@ -219,6 +221,8 @@ public class P4SCM extends SCM {
             log.println(StringUtils.rightPad("P4CLIENT:", RIGHTPAD_SIZE, ".") + currentClient.getName());
             log.println(StringUtils.rightPad("Last built changelist:", RIGHTPAD_SIZE, ".") + lastBuiltChange);
             log.println(StringUtils.rightPad("Syncing to changelist:", RIGHTPAD_SIZE, ".") + newestChange.getId());
+            
+            createChangelist(server, lastChange, newestChange, log);
             
             List<IFileSpec> syncList = currentClient.sync(
                     FileSpecBuilder.makeFileSpecList("//..."),
@@ -388,21 +392,6 @@ public class P4SCM extends SCM {
     }
     
     /**
-     * Create formatted p4 server information.
-     * 
-     * @param info Perforce server information
-     * @return Formatted server information
-     */
-    private static String formatInfo(IServerInfo info) {
-        return "\tserver address: " + info.getServerAddress() + "\n"
-                + "\tserver version" + info.getServerVersion() + "\n"
-                + "\tclient address: " + info.getClientAddress() + "\n"
-                + "\tclient working directory: " + info.getClientCurrentDirectory() + "\n"
-                + "\tclient name: " + info.getClientName() + "\n"
-                + "\tuser name: " + info.getUserName();
-    }
-    
-    /**
      * Get the last built changelist ID.
      * 
      * @param build The build from where to start searching. Go back
@@ -454,13 +443,32 @@ public class P4SCM extends SCM {
     private static IChangelistSummary getNewestChange(IServer server) 
             throws ConnectionException, RequestException, AccessException {
         
-        //FileSpecBuilder.makeFileSpecList("//...")
-        List<IChangelistSummary> allChanges = server.getChangelists(0, null, null, null, false, IChangelist.Type.SUBMITTED, false);
+        List<IChangelistSummary> allChanges = server.getChangelists(MAX_CHANGELISTS, 
+                FileSpecBuilder.makeFileSpecList("//..."), null, null, false, true, false, false);
         IChangelistSummary newestChange = allChanges.get(0);
         
         return newestChange;
     }
-   
+    
+    
+    private static void createChangelist(IServer server, IChangelistSummary lastChange, 
+            IChangelistSummary newestChange, PrintStream log) 
+                    throws ConnectionException, RequestException, AccessException {
+        
+        List<IChangelistSummary> allChanges = server.getChangelists(MAX_CHANGELISTS, 
+                FileSpecBuilder.makeFileSpecList("//..."), null, null, false, true, false, false);
+        
+        List<IChangelistSummary> filteredChanges;
+        
+        log.println("Calculating changelog...");
+        
+        if (allChanges != null) {
+            for (IChangelistSummary changelistSummary : allChanges) {
+                log.println(changelistSummary.getId());
+            }
+        }
+    }
+    
     @Extension
     public static final class P4SCMDescriptor extends SCMDescriptor<P4SCM> {
         public P4SCMDescriptor() {
